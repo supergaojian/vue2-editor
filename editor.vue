@@ -1,6 +1,6 @@
 <template>
-  <div class="text-editor">
-    <div class="editor-opera-panel" :class="[focus && 'editor-opera-panel-active']">
+  <div class="text-editor" ref="editorContainer" @mousedown="mousedown">
+    <div class="editor-opera-panel" :class="[focus && 'editor-opera-panel-active']" :style="{ top: scrollTop + 'px' }">
       <div class="blod" @click="bold">B</div>
       <div class="italic" @click="italic">I</div>
       <div class="font-size">
@@ -54,7 +54,7 @@
       <div class="clear-btn" @click="clear">清除格式</div>
     </div>
     <div class="editor-text-box">
-      <div class="editor-text" ref="editor" contenteditable="true" @focus="focus = true" @mouseup="mouseup">
+      <div class="editor-text" ref="editor" contenteditable="true" @focus="focus = true" @blur="blur" @mouseup="mouseup">
         <div>{{ content }}</div>
       </div>
     </div>
@@ -76,6 +76,8 @@
 
     data () {
       return {
+        editing: false,
+        scrollTop: -38,
         range: null, // 当前选择range
         selectType: '', // 当前用户选择状态
         focus: false, // 焦点集中状态，false为未选中，true未选中态
@@ -87,10 +89,32 @@
     },
 
     methods: {
+      mousedown (e) {
+        e.stopPropagation()
+        e.path.map(path => {
+          if (path.className && path.className.indexOf('editor-opera-panel') > -1) {
+            this.editing = true
+          }
+        })
+      },
+
+      blur () {
+        if (!this.editing) {
+          this.focus = false
+          this.editing = false
+//        console.log(document.querySelector('.editor-text').innerHTML)
+        }
+      },
+
       mouseup () {
         let selection = document.getSelection()
         this.range = selection.getRangeAt(0)
         this.selectType = selection.type
+        let startContainer = selection.anchorNode
+        if (startContainer.nodeType !== 1 && startContainer.tagName !== 'DIV') {
+          startContainer = startContainer.parentNode
+        }
+        this.scrollTop = startContainer.offsetTop - 38
       },
 
       bold () {
